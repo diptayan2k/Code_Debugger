@@ -33,6 +33,12 @@ val2.set(1)
 debug_flag = True
 
 def compare_files(fpath1, fpath2):
+    p = os.stat(fpath1).st_size
+    q = os.stat(fpath2).st_size
+    if p == 0 and q != 0 : return False
+    if p != 0 and q == 0 : return False
+
+
     with open(fpath1) as file1, open(fpath2) as file2:
         for linef1, linef2 in zip(file1, file2):
             linef1 = linef1.rstrip()
@@ -41,7 +47,7 @@ def compare_files(fpath1, fpath2):
             #print(linef1 + " " + linef2 + "n")
             if linef1 != linef2:
                 return False
-        return next(file1, None) == None and next(file2, None) == None
+        return (next(file1, None) == None) and (next(file2, None) == None)
 
 
 def codconfig1():
@@ -160,6 +166,7 @@ def clear_all():
     lang_menu1.set("CPP")
     lang_menu2.set("CPP")
 
+
     if val1.get()==0:
         Code1.configure(state = 'disabled')
     if val2.get()==0:
@@ -178,6 +185,16 @@ def clear_all():
         Input_path.configure(state = 'disabled')
         test.configure(state='disabled')
 
+    dir_name = Working_Directory.get("1.0", "end-1c")
+    tes = os.listdir(dir_name)
+
+    for item in tes:
+        if item.endswith(".class"):
+            os.remove(os.path.join(dir_name, item))
+        if item.endswith(".txt"):
+            os.remove(os.path.join(dir_name, item))
+        if item.endswith(".exe"):
+            os.remove(os.path.join(dir_name, item))
 
 
 
@@ -225,34 +242,8 @@ def run_python_code(code_path, input_path, type) :
 
     except Exception as e:
         debug_flag = False
-        '''lol = subprocess.run("taskkill /IM Python.exe /F", shell=True, capture_output=True)'''
-
-        #print(lol.stderr)
-        #pid  =  subprocess.run('''tasklist /fo csv | findstr /i "Python"''', shell=True, text=True, capture_output=True)
-        '''
-        li = list(map(str,pid.stdout.split('\n')))
-        id = int(os.getpid())
-        #subprocess.run("taskkill /PID " + str(id) + " /F", shell=True, capture_output=True)
-        print(li)
-        print(id)
-        for i in li :
-            li1 = list(map(str,i.split(',')))
-            if (len(li1) >= 2) :
-                st = li1[1]
-                pp = int(st[1:len(st)-1])
-                #print(pp)
-                if int(pp) != int(id) :
-                    print(pp)
-                    #lol = subprocess.run("taskkill /PID " + str(pp) + " /F", shell=True, capture_output=True)
-
-        #os.killpg(os.getpgid(op.pid), signal.SIGTERM)
-        #copy_path = Working_Directory.get("1.0", "end-1c") + "\\code1.py"
-        #shutil.copy(code_path, copy_path)
-        #shutil.copy(copy_path, code_path)
-        #if copy_path != code_path :
-        #    os.remove(copy_path)
-        '''
-        messagebox.showerror("Error", "Failed to execute " + title_string + ".\nPlease re-check your code.")
+        lol = subprocess.run("taskkill /IM Python.exe /F", shell=True, capture_output=True)
+        messagebox.showerror("Error", "Failed to execute " + title_string + ".\nMay be there are issues with the code or it is already open in some process.\n")
         return
 
 
@@ -309,6 +300,63 @@ def run_cpp_code(code_path, input_path, type) :
         messagebox.showerror("Error", "Failed to execute " + title_string + ".\nPlease re-check your code.")
         return
 
+def get_file_name(path) :
+    head, tail = os.path.split(path)
+    return tail
+
+def run_java_code(code_path, input_path, type) :
+    global debug_flag
+    global Execution_time1
+    global Execution_time2
+    global Compilation_time1
+    global Compilation_time2
+
+    title_string = ""
+    if type == "1": title_string = "Code1"
+    if type == "2": title_string = "Code2"
+    if type == "test": title_string = "Random Generator"
+
+    name = get_file_name(code_path)
+    name = name[0:len(name)-5]
+    working_dir = Working_Directory.get("1.0", "end-1c")
+    command1 = "javac -d " + '''"''' + working_dir + '''" "''' + code_path + '''"'''
+    command2 =  '''java -cp "''' + working_dir + '''" ''' + name + ''' <"''' + input_path + '''"> "''' + working_dir + "\op" + type + '''.txt"'''
+
+    if type == "test" :
+        command1 = "javac -d " + '''"''' + working_dir + '''" "''' + code_path + '''"'''
+        command2 = '''java -cp "''' + working_dir + '''" ''' + name + ''' > "''' + str(working_dir) + r'''\test.txt"'''
+
+    print(command1)
+    print(command2)
+    start = time.time()
+    op1 = subprocess.run(command1, shell=True, text=True, capture_output=True)
+    if type == "1":
+        Compilation_time1 = time.time() - start
+    if type == "2":
+        Compilation_time2 = time.time() - start
+    if (op1.returncode > 0):
+        if len(op1.stderr) != 0:
+            debug_flag = False
+            messagebox.showerror("Error","In " + title_string + "\n" + str(op1.stderr))
+            return
+        else:
+            debug_flag = False
+            messagebox.showerror("Error", "In " + title_string + "\n" + "Runtime Error")
+            return
+
+    start = time.time()
+    try :
+        op2 = subprocess.call(command2, shell=True, timeout=5)
+        if type == "1":
+            Execution_time1 = time.time() - start
+        if type == "2":
+            Execution_time2 = time.time() - start
+    except Exception as e:
+        debug_flag = False
+        lol = subprocess.run("taskkill /IM java.exe /F", shell=True, capture_output=True)
+        print(lol)
+        messagebox.showerror("Error", "Failed to execute " + title_string + ".\nMay be there are issues with the code or it is already open in some process.\n")
+        return
 
 
 def save_python_code1() :
@@ -335,6 +383,18 @@ def save_cpp_code1() :
         save_path = Path1.get("1.0", "end-1c")
         return save_path
 
+def save_java_code1() :
+    if val1.get() == 1:
+        directory = Working_Directory.get("1.0", "end-1c")
+        save_path = directory + "\code1.java"
+        text_file = open(save_path , "w")
+        text_file.write(Code1.get("1.0", "end-1c"))
+        text_file.close()
+        return  save_path
+    elif val1.get() == 0 :
+        save_path = Path1.get("1.0", "end-1c")
+        return save_path
+
 def save_python_code2() :
     if val2.get() == 1:
         directory = Working_Directory.get("1.0", "end-1c")
@@ -346,6 +406,7 @@ def save_python_code2() :
     elif val2.get() == 0 :
         save_path = Path2.get("1.0", "end-1c")
         return save_path
+
 
 def save_cpp_code2() :
     if val2.get() == 1:
@@ -359,14 +420,31 @@ def save_cpp_code2() :
         save_path = Path2.get("1.0", "end-1c")
         return save_path
 
+def save_java_code2() :
+    if val2.get() == 1:
+        directory = Working_Directory.get("1.0", "end-1c")
+        save_path = directory + "\code2.java"
+        text_file = open(save_path , "w")
+        text_file.write(Code2.get("1.0", "end-1c"))
+        text_file.close()
+        return  save_path
+    elif val2.get() == 0 :
+        save_path = Path2.get("1.0", "end-1c")
+        return save_path
+
+
+
 def check_validity_of_extension(path, language) :
     reverse_path = path[::-1]
     if language == "Python" :
-        if len(path) < 4 : return False
+        if len(path) < 3 : return False
         if reverse_path[0:3] != "yp." : return False
     if language == "CPP":
-        if len(path) < 5 : return False
+        if len(path) < 4 : return False
         if reverse_path[0:4] != "ppc.": return False
+    if language == "Java":
+        if len(path) < 5 : return False
+        if reverse_path[0:5] != "avaj.": return False
 
 def compare_outputs():
     if compare_files(Working_Directory.get("1.0", "end-1c") + "\op1.txt", Working_Directory.get("1.0", "end-1c") + "\op2.txt") == False :
@@ -374,6 +452,8 @@ def compare_outputs():
     else :
         messagebox.showinfo("Output Match", "Output of both the codes match for the given test case")
         Log1.config(state = 'normal')
+        Log1.delete('1.0', END)
+
         Log1.insert(tk.END, "\t\tLog for Code 1  ")
         Log1.insert(tk.END,"\n\t\t--------------")
         Log1.insert(tk.END,"\n\n\tCompilation Time(s) :\t"+ str(Compilation_time1))
@@ -383,6 +463,7 @@ def compare_outputs():
         Log1.config(state = 'disable')
 
         Log2.config(state='normal')
+        Log2.delete('1.0', END)
         Log2.insert(tk.END, "\t\tLog for Code 2  ")
         Log2.insert(tk.END, "\n\t\t--------------")
         Log2.insert(tk.END, "\n\n\tCompilation Time(s) :\t" + str(Compilation_time2))
@@ -433,6 +514,14 @@ def Debug():
             run_cpp_code(code_path,"","test")
             test_path = Working_Directory.get("1.0", "end-1c") + "\\test.txt"
 
+        if Language3.get() == "Java" and debug_flag == True:
+            code_path = Random_case.get("1.0", "end-1c")
+            if (check_validity_of_extension(code_path, "Java")) == False:
+                messagebox.showerror("Extention-Language Mismatch", "In Random generator extension for Java must be .java")
+                return
+            run_java_code(code_path,"","test")
+            test_path = Working_Directory.get("1.0", "end-1c") + "\\test.txt"
+
     print(test_path)
 
 
@@ -449,9 +538,14 @@ def Debug():
         if (check_validity_of_extension(code_path,"CPP")) == False :
             messagebox.showerror("Extention-Language Mismatch", "In code1 extension for CPP must be .cpp")
             return
-
-
         run_cpp_code(code_path, test_path, "1")
+
+    if Language1.get() == 'Java' and debug_flag == True:
+        code_path = save_java_code1()
+        if (check_validity_of_extension(code_path,"Java")) == False :
+            messagebox.showerror("Extention-Language Mismatch", "In code1 extension for Java must be .java")
+            return
+        run_java_code(code_path, test_path, "1")
 
     if Language2.get() == "Python" and debug_flag == True :
         code_path = save_python_code2()
@@ -466,6 +560,14 @@ def Debug():
             messagebox.showerror("Extention-Language Mismatch", "In code2 extension for CPP must be .cpp")
             return
         run_cpp_code(code_path, test_path, "2")
+
+    if Language2.get() == 'Java' and debug_flag == True:
+        code_path = save_java_code2()
+        if (check_validity_of_extension(code_path, "Java")) == False:
+            messagebox.showerror("Extention-Language Mismatch", "In code2 extension for Java must be .java")
+            return
+        run_java_code(code_path, test_path, "2")
+
 
 
     if debug_flag == True :
@@ -483,7 +585,7 @@ frame2 = Frame(root, width=600, height=1700, bg='grey')
 frame2.grid(row=1,column=0, padx=30 ,pady=5, sticky=NW)
 
 frame3 = Frame(root, width=100, height=1700, bg='grey')
-frame3.grid(row=3,column=0, padx=30 ,pady=5)
+frame3.grid(row=3,column=0, padx=30 ,pady=5, sticky = W)
 
 frame4 = Frame(root, width=100, height=1700, bg='grey')
 frame4.grid(row=4,column=0, padx=30 ,pady=5, sticky=NW)
@@ -502,8 +604,11 @@ Working_Directory.insert(tk.END, "C:\\Users\\DIPTAYAN BISWAS\\Desktop\\Code_Debu
 
 # Editor for Code1
 Radiobutton(frame1, text="Enter Code1 :", variable=val1, value=1, bg='grey', activebackground='grey', command=codconfig1).grid(row=0, column=0, padx=5, pady=5, sticky=NW)
-Code1 = Text(frame1, height=20, width=90, bg='white')
-Code1.grid(row=1, column = 0, padx=5, pady=5, sticky=NW)
+scroll1 = Scrollbar(frame1)
+scroll1.grid(row  = 1, column = 1, padx = (0,5), pady=6,ipady = 136 , sticky = NW)
+Code1 = Text(frame1, height=20, width=87, bg='white', yscrollcommand=scroll1.set)
+Code1.grid(row=1, column = 0, padx=(10,0), pady=5, sticky=NW)
+scroll1.config(command=Code1.yview)
 
 # path for code 1
 Radiobutton(frame2, text="Enter Path1 :", variable=val1, value=0, bg='grey', activebackground='grey', command=codconfig1).grid(row=0, column=0, padx=5, pady=0, sticky = W)
@@ -520,9 +625,12 @@ lang_menu1.grid(row=0, column=0, padx=60, pady=5, sticky=E)
 lang_menu1.current(0)
 
 # Editor For Code 2
-Radiobutton(frame1, text="Enter Code2 :", variable=val2, value=1, bg='grey', activebackground='grey', command=codconfig2).grid(row=0, column=1, padx=5, pady=5, sticky=NW )
-Code2 = Text(frame1, height=20, width=90,bg='white')
-Code2.grid(row=1, column = 1, padx=5, pady=5, sticky=NE)
+scroll2 = Scrollbar(frame1)
+scroll2.grid(row  = 1, column = 3, padx = (0,5), pady=6,ipady = 136 , sticky = NW)
+Radiobutton(frame1, text="Enter Code2 :", variable=val2, value=1, bg='grey', activebackground='grey', command=codconfig2).grid(row=0, column=2, padx=11, pady=5, sticky=NW )
+Code2 = Text(frame1, height=20, width=87,bg='white',yscrollcommand=scroll2.set)
+Code2.grid(row=1, column = 2, padx=(10,0), pady=5, sticky=NE)
+scroll2.config(command=Code2.yview)
 # OK button
 #Button(frame1, height=1, width=10, text="OK", command=lambda: retrieve_input(Code2)).grid(row=2, column=1, padx=5, pady=5)
 
@@ -535,39 +643,43 @@ Button2.grid(row=0, column=7, padx=5, pady=5, sticky = W)
 #Path1.insert(tk.END, "C:\\Users\\DIPTAYAN BISWAS\\Desktop\\Code_Debugger")
 
 # Menu for Selecting language
-Label(frame1 , text="\t\t\t\tSelect Language: " , bg='grey').grid(row=0, column=1, padx=5, pady=5)
+Label(frame1 , text="\t\t\t\tSelect Language: " , bg='grey').grid(row=0, column=2, padx=5, pady=5)
 lang_menu2 = ttk.Combobox(frame1, textvariable= Language2, values=['CPP', 'Python', 'Java'])
-lang_menu2.grid(row=0, column=1, padx=60, pady=5, sticky=E)
+lang_menu2.grid(row=0, column=2, padx=60, pady=5, sticky=E)
 lang_menu2.current(0)
 
 # Custom Test Case
 Radiobutton(frame3, text="Enter Custom Test: ", variable=val3, value=0, bg='grey', activebackground='grey', command=configtest).grid(row=0, column=0, padx=5, pady=5, sticky=NW)
-test = Text(frame3, height=5, width=100)
-test.grid(row=1, column = 0, padx=5, pady=5, sticky=NW)
+scroll = Scrollbar(frame3)
+scroll.grid(row  = 1, column = 1, padx = (0,5), pady=6,ipady = 16 , sticky = NW)
+test = Text(frame3, height=5, width=96, yscrollcommand=scroll.set)
+test.grid(row=1, column = 0, padx=(10,0), pady=5, sticky=NE)
+scroll.config(command=test.yview)
+
 
 # path for input
-Radiobutton(frame3, text="Enter Input file : ", variable=val3, value=1, bg='grey', activebackground='grey', command=configtest).grid(row=0, column=1, padx=5, pady=0, sticky = W)
+Radiobutton(frame3, text="Enter Input file : ", variable=val3, value=1, bg='grey', activebackground='grey', command=configtest).grid(row=0, column=2, padx=5, pady=0, sticky = W)
 Input_path = Text(frame3, height=1, width=76, bg='dim gray', state='disabled')
-Input_path.grid(row=1, column=1, padx=5, pady=5, sticky=NW)
+Input_path.grid(row=1, column=2, padx=5, pady=5, sticky=NW)
 Buttontest = Button(frame3, image = photoimage,state = 'disabled', command=set_up_pathtest)
-Buttontest.grid(row=1, column=2, padx=5, pady=5, sticky = NE)
+Buttontest.grid(row=1, column=3, padx=5, pady=5, sticky = NE)
 
 #Path1.insert(tk.END, "C:\\Users\\DIPTAYAN BISWAS\\Desktop\\Code_Debugger")
 
 # path for random case generator
-Radiobutton(frame3, text="Genetate Test File : \t\tSelect Language :", variable=val3, value=2, bg='gray', activebackground='grey', command=configtest).grid(row=1, column=1, padx=5, sticky=W)
+Radiobutton(frame3, text="Genetate Test File : \t\tSelect Language :", variable=val3, value=2, bg='gray', activebackground='grey', command=configtest).grid(row=1, column=2, padx=5, sticky=W)
 Random_case = Text(frame3,height=1,  width=76, bg='dim gray', state='disabled')
-Random_case.grid(row=1, column=1, padx=5, pady=5, sticky=SW)
+Random_case.grid(row=1, column=2, padx=5, pady=5, sticky=SW)
 Buttonrandom = Button(frame3, image = photoimage,state = 'disabled', command=set_up_pathrandom)
-Buttonrandom.grid(row=1, column=2, padx=5, pady=5, sticky = SE)
+Buttonrandom.grid(row=1, column=3, padx=5, pady=5, sticky = SE)
 
 # selecting language for random case generator
 langg_menu = ttk.Combobox(frame3, textvariable= Language3, values=['CPP', 'Python', 'Java'],state='disabled')
-langg_menu.grid(row=1, column=1, padx=150, pady=5, sticky=E)
+langg_menu.grid(row=1, column=2, padx=150, pady=5, sticky=E)
 langg_menu.current(0)
 
 Button(frame3, height=1, width=10, text="Debug", command= Debug).grid(row=2, column=0, padx=100, pady=5,sticky=E)
-Button(frame3, height=1, width=10, text="Clear", command=clear_all).grid(row=2, column=1, padx=0, pady=5,sticky=W)
+Button(frame3, height=1, width=10, text="Clear", command=clear_all).grid(row=2, column=2, padx=0, pady=5,sticky=W)
 
 # Showing log
 Log1 = Text(frame4,height=8,  width = 91, bg='dim gray')
