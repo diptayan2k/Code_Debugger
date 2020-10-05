@@ -8,7 +8,11 @@ User can provide custom test cases, an input file or a code of random test gener
 The application also displays the compilation and run time of both the programs.
 
 User Interface of the program :
+
 ![image](https://user-images.githubusercontent.com/44607923/95125711-fe5b6200-0772-11eb-9781-158460046012.png)
+
+![image](https://user-images.githubusercontent.com/44607923/95125852-2c40a680-0773-11eb-8042-3525e8971ba7.png)
+
 
 
 Demo of the application : https://drive.google.com/file/d/1PNXfKOxz2pxT0U8fc0AWtUaT8LNXobjb/view?usp=sharing
