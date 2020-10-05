@@ -1,7 +1,7 @@
 ## Code Debugger
 A python GUI based application made using TkInter that takes two source codes, executes them against a common input and compares their stdout output. 
 Currently the supported languages are CPP, Python3 and Java.
-This application provides various features to the users such as comparing programs of different languages and comparing them over various test cases.
+This application provides various features to the users such as comparing programs of different languages over various test cases.
 The user has to set a local working directory that acts as a local database.
 For each program, the user may choose to either write the program in the editor or browse the path of the program. 
 User can provide custom test cases, an input file or a code of random test generator. 
