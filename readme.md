@@ -7,5 +7,7 @@ For each program, the user may choose to either write the program in the editor 
 User can provide custom test cases, an input file or a code of random test generator. 
 The application also displays the compilation and run time of both the programs.
 
+User Interface of the program :
+
 
 Demo of the application : https://drive.google.com/file/d/1PNXfKOxz2pxT0U8fc0AWtUaT8LNXobjb/view?usp=sharing
